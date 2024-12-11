@@ -6,7 +6,6 @@ import 'package:flutter/services.dart';
 
 typedef BarcodeScannedVoidCallBack = void Function(String barcode);
 
-//wow
 /// `BarcodeInputListener` is a widget that captures keyboard events to process barcodes.
 class BarcodeInputListener extends StatefulWidget {
   final Widget child;
@@ -84,21 +83,20 @@ class _BarcodeInputListenerState extends State<BarcodeInputListener> {
   }
 
   void _handleKeyEvent(String? char) {
-    _clearOldBufferedChars();
-    _lastEventTime = DateTime.now();
+    // Only process non-empty characters
+    if (char != null && char.isNotEmpty) {
+      _clearOldBufferedChars();
+      _lastEventTime = DateTime.now();
+      _bufferedChars.add(char); // Add character to buffer
 
-    // Only add barcode characters, skip special keys like enter
-    if (char != "enter" && char != "backspace") {
-      _bufferedChars.add(char!);
-    }
+      // Once buffer is complete or timeout occurs, send the final barcode
+      final barcode = _bufferedChars.join();
 
-    // Once buffer is complete or timeout occurs, send the final barcode
-    final barcode = _bufferedChars.join();
-
-    // If there is enough delay (bufferDuration) without new input, trigger the barcode scan
-    if (DateTime.now().difference(_lastEventTime!) > widget.bufferDuration) {
-      widget.onBarcodeScanned(barcode);
-      _bufferedChars.clear(); // Clear the buffer after sending the barcode
+      // If there is enough delay (bufferDuration) without new input, trigger the barcode scan
+      if (DateTime.now().difference(_lastEventTime!) > widget.bufferDuration) {
+        widget.onBarcodeScanned(barcode); // Send the scanned barcode
+        _bufferedChars.clear(); // Clear the buffer after sending the barcode
+      }
     }
   }
 
@@ -142,7 +140,7 @@ class _BarcodeInputListenerState extends State<BarcodeInputListener> {
     if (_lastEventTime != null &&
         _lastEventTime!
             .isBefore(DateTime.now().subtract(widget.bufferDuration))) {
-      _bufferedChars.clear();
+      _bufferedChars.clear(); // Only clear if buffer timeout passed
     }
   }
 
