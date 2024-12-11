@@ -40,7 +40,6 @@ class _BarcodeInputListenerState extends State<BarcodeInputListener> {
   final List<String> _bufferedChars = [];
   DateTime? _lastEventTime;
   late StreamSubscription<String?> _keyStreamSubscription;
-  late StreamSubscription<LogicalKeyboardKey?> _logicalKeyStreamSubscription;
   final StreamController<String?> _keyStreamController =
       StreamController<String?>();
   @override
@@ -61,7 +60,6 @@ class _BarcodeInputListenerState extends State<BarcodeInputListener> {
       HardwareKeyboard.instance.removeHandler(_onKeyEvent);
     }
     _keyStreamSubscription.cancel();
-    _logicalKeyStreamSubscription.cancel();
     _keyStreamController.close();
     super.dispose();
   }
