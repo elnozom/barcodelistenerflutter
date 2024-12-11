@@ -1,14 +1,11 @@
 import 'dart:async';
 import 'dart:io' show Platform;
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 typedef BarcodeScannedVoidCallBack = void Function(String barcode);
 
-/// `BarcodeInputListener` is a widget that captures keyboard events to process barcodes.
-/// It listens for key events and buffers characters within the specified `bufferDuration`.
-/// Once a complete barcode is detected, it triggers the provided `onBarcodeScanned` callback.
 class BarcodeInputListener extends StatefulWidget {
   final Widget child;
   final BarcodeScannedVoidCallBack onBarcodeScanned;
@@ -30,10 +27,13 @@ class BarcodeInputListener extends StatefulWidget {
 class _BarcodeInputListenerState extends State<BarcodeInputListener> {
   final List<String> _bufferedChars = [];
   DateTime? _lastEventTime;
+
   late StreamSubscription<String?> _keyStreamSubscription;
   late StreamSubscription<LogicalKeyboardKey?> _logicalKeyStreamSubscription;
+
   final StreamController<String?> _keyStreamController =
       StreamController<String?>();
+
   final StreamController<LogicalKeyboardKey?> _logicalKeyStreamController =
       StreamController<LogicalKeyboardKey?>();
 
@@ -41,7 +41,8 @@ class _BarcodeInputListenerState extends State<BarcodeInputListener> {
   void initState() {
     super.initState();
     if (kIsWeb || Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
-      HardwareKeyboard.instance.addHandler(_onKeyEvent);
+      // For Web, Windows, Linux, and macOS, set up keyboard event listeners
+      RawKeyboard.instance.addListener(_onKeyEvent);
     }
     // Listen for character stream
     _keyStreamSubscription = _keyStreamController.stream
@@ -55,9 +56,7 @@ class _BarcodeInputListenerState extends State<BarcodeInputListener> {
 
   @override
   void dispose() {
-    if (kIsWeb || Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
-      HardwareKeyboard.instance.removeHandler(_onKeyEvent);
-    }
+    RawKeyboard.instance.removeListener(_onKeyEvent);
     _keyStreamSubscription.cancel();
     _logicalKeyStreamSubscription.cancel();
     _keyStreamController.close();
@@ -65,23 +64,21 @@ class _BarcodeInputListenerState extends State<BarcodeInputListener> {
     super.dispose();
   }
 
-  bool _onKeyEvent(KeyEvent event) {
-    if ((!widget.useKeyDownEvent && event is KeyUpEvent) ||
-        (widget.useKeyDownEvent && event is KeyDownEvent)) {
-      String? char = _getCharacterFromEvent(event);
-      if (char != null) {
+  // This function captures both physical keys and logical keys
+  void _onKeyEvent(RawKeyEvent event) {
+    if ((!widget.useKeyDownEvent && event is RawKeyUpEvent) ||
+        (widget.useKeyDownEvent && event is RawKeyDownEvent)) {
+      // Extract the character if it exists
+      String? char = event.logicalKey.keyLabel;
+      if (char != null && char.isNotEmpty) {
         _keyStreamController.add(char);
       }
+      // Extract the logical key
+      LogicalKeyboardKey logicalKey = event.logicalKey;
+      if (logicalKey != LogicalKeyboardKey.unidentified) {
+        _logicalKeyStreamController.add(logicalKey);
+      }
     }
-    return true;
-  }
-
-  String? _getCharacterFromEvent(KeyEvent event) {
-    final String? char = event.character;
-    if (char != null && char.isNotEmpty) {
-      return char;
-    }
-    return null;
   }
 
   void _handleKeyEvent(String? char) {
@@ -113,10 +110,9 @@ class _BarcodeInputListenerState extends State<BarcodeInputListener> {
       return ".";
     } else if (logicalKey.keyId >= LogicalKeyboardKey.f1.keyId &&
         logicalKey.keyId <= LogicalKeyboardKey.f12.keyId) {
-      // Map F1-F12 keys
       return "F${logicalKey.keyId - LogicalKeyboardKey.f1.keyId + 1}";
     }
-    return ""; // Return empty string if no mapping
+    return "";
   }
 
   void _clearOldBufferedChars() {
@@ -130,41 +126,27 @@ class _BarcodeInputListenerState extends State<BarcodeInputListener> {
   @override
   Widget build(BuildContext context) {
     if (kIsWeb || Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
-      final focusNode = FocusNode();
-      return KeyboardListener(
-        autofocus: true,
-        includeSemantics: true,
-        focusNode: focusNode,
-        onKeyEvent: (KeyEvent event) {
-          if (event is KeyDownEvent) {
-            String? char = event.character;
-            final logicalKey = event.logicalKey;
-            if (char != null) {
-              _keyStreamController.add(char);
-            }
-            _logicalKeyStreamController.add(logicalKey);
-          }
+      return RawKeyboardListener(
+        focusNode: FocusNode(),
+        onKey: (RawKeyEvent event) {
+          _onKeyEvent(event);
         },
         child: widget.child,
       );
     } else {
       final focusNode = FocusNode();
       focusNode.requestFocus();
-      return KeyboardListener(
-        autofocus: true,
-        includeSemantics: true,
-        focusNode: focusNode,
-        onKeyEvent: (KeyEvent event) {
-          if (event is KeyDownEvent) {
-            String? char = event.character;
-            final logicalKey = event.logicalKey;
-            if (char != null) {
-              _keyStreamController.add(char);
-            }
-            _logicalKeyStreamController.add(logicalKey);
-          }
-        },
-        child: widget.child,
+      return GestureDetector(
+        onTap: () => focusNode.requestFocus(),
+        child: Focus(
+          autofocus: true,
+          focusNode: focusNode,
+          onKey: (FocusNode node, RawKeyEvent event) {
+            _onKeyEvent(event);
+            return KeyEventResult.handled;
+          },
+          child: widget.child,
+        ),
       );
     }
   }
