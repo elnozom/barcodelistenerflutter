@@ -79,8 +79,7 @@ class _BarcodeInputListenerState extends State<BarcodeInputListener> {
     final logicalKey = event.logicalKey;
     if (event.character != null && event.character!.isNotEmpty) {
       return event.character;
-    }
-    if (logicalKey == LogicalKeyboardKey.backspace) {
+    } else if (logicalKey == LogicalKeyboardKey.backspace) {
       return "backspace";
     } else if (logicalKey == LogicalKeyboardKey.enter) {
       return "enter";
