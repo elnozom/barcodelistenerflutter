@@ -7,6 +7,8 @@ import 'package:flutter/services.dart';
 typedef BarcodeScannedVoidCallBack = void Function(String barcode);
 
 /// `BarcodeInputListener` is a widget that captures keyboard events to process barcodes.
+/// It listens for key events and buffers characters within the specified `bufferDuration`.
+/// Once a complete barcode is detected, it triggers the provided `onBarcodeScanned` callback.
 class BarcodeInputListener extends StatefulWidget {
   final Widget child;
   final BarcodeScannedVoidCallBack onBarcodeScanned;
@@ -83,21 +85,11 @@ class _BarcodeInputListenerState extends State<BarcodeInputListener> {
   }
 
   void _handleKeyEvent(String? char) {
-    // Only process non-empty characters
-    if (char != null && char.isNotEmpty) {
-      _clearOldBufferedChars();
-      _lastEventTime = DateTime.now();
-      _bufferedChars.add(char); // Add character to buffer
-
-      // Once buffer is complete or timeout occurs, send the final barcode
-      final barcode = _bufferedChars.join();
-
-      // If there is enough delay (bufferDuration) without new input, trigger the barcode scan
-      if (DateTime.now().difference(_lastEventTime!) > widget.bufferDuration) {
-        widget.onBarcodeScanned(barcode); // Send the scanned barcode
-        _bufferedChars.clear(); // Clear the buffer after sending the barcode
-      }
-    }
+    _clearOldBufferedChars();
+    _lastEventTime = DateTime.now();
+    _bufferedChars.add(char!);
+    final barcode = _bufferedChars.join();
+    widget.onBarcodeScanned(barcode);
   }
 
   // Handling logical key events like Backspace, Enter, etc.
@@ -105,16 +97,7 @@ class _BarcodeInputListenerState extends State<BarcodeInputListener> {
     if (logicalKey != null) {
       String barcodeEvent = _getBarcodeForLogicalKey(logicalKey);
       if (barcodeEvent.isNotEmpty) {
-        // Only call onBarcodeScanned for special logical keys like "enter" or "backspace"
-        if (barcodeEvent == "backspace" && _bufferedChars.isNotEmpty) {
-          _bufferedChars
-              .removeLast(); // Handle backspace by removing last character
-        } else if (barcodeEvent == "enter") {
-          // Handle the 'enter' key as part of barcode scan completion
-          final barcode = _bufferedChars.join();
-          widget.onBarcodeScanned(barcode);
-          _bufferedChars.clear(); // Clear the buffer after sending the barcode
-        }
+        widget.onBarcodeScanned(barcodeEvent);
       }
     }
   }
@@ -123,7 +106,7 @@ class _BarcodeInputListenerState extends State<BarcodeInputListener> {
     if (logicalKey == LogicalKeyboardKey.backspace) {
       return "backspace";
     } else if (logicalKey == LogicalKeyboardKey.enter) {
-      return "enter"; // Don't include enter key in the barcode string
+      return "enter";
     } else if (logicalKey == LogicalKeyboardKey.space) {
       return "space";
     } else if (logicalKey == LogicalKeyboardKey.period) {
@@ -140,7 +123,7 @@ class _BarcodeInputListenerState extends State<BarcodeInputListener> {
     if (_lastEventTime != null &&
         _lastEventTime!
             .isBefore(DateTime.now().subtract(widget.bufferDuration))) {
-      _bufferedChars.clear(); // Only clear if buffer timeout passed
+      _bufferedChars.clear();
     }
   }
 
