@@ -7,8 +7,6 @@ import 'package:flutter/services.dart';
 typedef BarcodeScannedVoidCallBack = void Function(String barcode);
 
 /// `BarcodeInputListener` is a widget that captures keyboard events to process barcodes.
-/// It listens for key events and buffers characters within the specified `bufferDuration`.
-/// Once a complete barcode is detected, it triggers the provided `onBarcodeScanned` callback.
 class BarcodeInputListener extends StatefulWidget {
   final Widget child;
   final BarcodeScannedVoidCallBack onBarcodeScanned;
@@ -111,6 +109,10 @@ class _BarcodeInputListenerState extends State<BarcodeInputListener> {
 
   String _getBarcodeForLogicalKey(LogicalKeyboardKey logicalKey) {
     if (logicalKey == LogicalKeyboardKey.backspace) {
+      // Handle backspace by removing the last character from the buffer
+      if (_bufferedChars.isNotEmpty) {
+        _bufferedChars.removeLast();
+      }
       return "backspace";
     } else if (logicalKey == LogicalKeyboardKey.enter) {
       return "enter";
