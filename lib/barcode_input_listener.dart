@@ -1,5 +1,3 @@
-library barcode_input_listener;
-
 import 'dart:async';
 
 import 'dart:io' show Platform;
@@ -42,8 +40,11 @@ class _BarcodeInputListenerState extends State<BarcodeInputListener> {
   final List<String> _bufferedChars = [];
   DateTime? _lastEventTime;
   late StreamSubscription<String?> _keyStreamSubscription;
+  late StreamSubscription<LogicalKeyboardKey?> _logicalKeyStreamSubscription;
   final StreamController<String?> _keyStreamController =
       StreamController<String?>();
+  final StreamController<LogicalKeyboardKey?> _logicalKeyStreamController =
+      StreamController<LogicalKeyboardKey?>();
 
   @override
   void initState() {
@@ -51,9 +52,14 @@ class _BarcodeInputListenerState extends State<BarcodeInputListener> {
     if (kIsWeb || Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
       HardwareKeyboard.instance.addHandler(_onKeyEvent);
     }
+    // Listen for character stream
     _keyStreamSubscription = _keyStreamController.stream
         .where((char) => char != null)
         .listen(_handleKeyEvent);
+    // Listen for logical key stream
+    _logicalKeyStreamSubscription = _logicalKeyStreamController.stream
+        .where((key) => key != null)
+        .listen(_handleLogicalKeyEvent);
   }
 
   @override
@@ -62,7 +68,9 @@ class _BarcodeInputListenerState extends State<BarcodeInputListener> {
       HardwareKeyboard.instance.removeHandler(_onKeyEvent);
     }
     _keyStreamSubscription.cancel();
+    _logicalKeyStreamSubscription.cancel();
     _keyStreamController.close();
+    _logicalKeyStreamController.close();
     super.dispose();
   }
 
@@ -78,24 +86,10 @@ class _BarcodeInputListenerState extends State<BarcodeInputListener> {
   }
 
   String? _getCharacterFromEvent(KeyEvent event) {
-    final logicalKey = event.logicalKey;
     final String? char = event.character;
     if (char != null && char.isNotEmpty) {
       return char;
     }
-    if (logicalKey == LogicalKeyboardKey.backspace) {
-      return "backspace";
-    } else if (logicalKey == LogicalKeyboardKey.enter) {
-      return "enter";
-    } else if (logicalKey == LogicalKeyboardKey.space) {
-      return "space";
-    } else if (logicalKey == LogicalKeyboardKey.period) {
-      return ".";
-    } else if (logicalKey.keyId >= LogicalKeyboardKey.f1.keyId &&
-        logicalKey.keyId <= LogicalKeyboardKey.f12.keyId) {
-      return "F${logicalKey.keyId - LogicalKeyboardKey.f1.keyId + 1}";
-    }
-
     return null;
   }
 
@@ -105,6 +99,17 @@ class _BarcodeInputListenerState extends State<BarcodeInputListener> {
     _bufferedChars.add(char!);
     final barcode = _bufferedChars.join();
     widget.onBarcodeScanned(barcode);
+  }
+
+  void _handleLogicalKeyEvent(LogicalKeyboardKey? logicalKey) {
+    // Handle specific logical key events if needed
+    if (logicalKey != null) {
+      print('Logical Key: $logicalKey');
+      if (logicalKey == LogicalKeyboardKey.backspace) {
+        // Handle backspace key event, if needed
+        print('Backspace pressed');
+      }
+    }
   }
 
   void _clearOldBufferedChars() {
@@ -129,9 +134,11 @@ class _BarcodeInputListenerState extends State<BarcodeInputListener> {
         onKeyEvent: (KeyEvent event) {
           if (event is KeyDownEvent) {
             String? char = event.character;
+            final logicalKey = event.logicalKey;
             if (char != null) {
               _keyStreamController.add(char);
             }
+            _logicalKeyStreamController.add(logicalKey);
           }
         },
         child: widget.child,
