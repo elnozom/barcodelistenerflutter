@@ -102,6 +102,7 @@ class _BarcodeInputListenerState extends State<BarcodeInputListener> {
     if (logicalKey != null) {
       String barcodeEvent = _getBarcodeForLogicalKey(logicalKey);
       if (barcodeEvent.isNotEmpty) {
+        // Only call onBarcodeScanned for special logical keys like "enter" or "backspace"
         widget.onBarcodeScanned(barcodeEvent);
       }
     }
@@ -115,7 +116,9 @@ class _BarcodeInputListenerState extends State<BarcodeInputListener> {
       }
       return "backspace";
     } else if (logicalKey == LogicalKeyboardKey.enter) {
-      return "enter";
+      // Prevent enter key from interfering with barcode
+      // It should not trigger a barcode scan, but can trigger another action if needed
+      return "enter"; // Or an empty string if you don't want to process enter at all
     } else if (logicalKey == LogicalKeyboardKey.space) {
       return "space";
     } else if (logicalKey == LogicalKeyboardKey.period) {
