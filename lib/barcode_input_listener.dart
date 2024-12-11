@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 
 typedef BarcodeScannedVoidCallBack = void Function(String barcode);
 
+//wow
 /// `BarcodeInputListener` is a widget that captures keyboard events to process barcodes.
 class BarcodeInputListener extends StatefulWidget {
   final Widget child;
@@ -85,7 +86,11 @@ class _BarcodeInputListenerState extends State<BarcodeInputListener> {
   void _handleKeyEvent(String? char) {
     _clearOldBufferedChars();
     _lastEventTime = DateTime.now();
-    _bufferedChars.add(char!);
+
+    // Only add barcode characters, skip special keys like enter
+    if (char != "enter" && char != "backspace") {
+      _bufferedChars.add(char!);
+    }
 
     // Once buffer is complete or timeout occurs, send the final barcode
     final barcode = _bufferedChars.join();
@@ -103,22 +108,24 @@ class _BarcodeInputListenerState extends State<BarcodeInputListener> {
       String barcodeEvent = _getBarcodeForLogicalKey(logicalKey);
       if (barcodeEvent.isNotEmpty) {
         // Only call onBarcodeScanned for special logical keys like "enter" or "backspace"
-        widget.onBarcodeScanned(barcodeEvent);
+        if (barcodeEvent == "backspace" && _bufferedChars.isNotEmpty) {
+          _bufferedChars
+              .removeLast(); // Handle backspace by removing last character
+        } else if (barcodeEvent == "enter") {
+          // Handle the 'enter' key as part of barcode scan completion
+          final barcode = _bufferedChars.join();
+          widget.onBarcodeScanned(barcode);
+          _bufferedChars.clear(); // Clear the buffer after sending the barcode
+        }
       }
     }
   }
 
   String _getBarcodeForLogicalKey(LogicalKeyboardKey logicalKey) {
     if (logicalKey == LogicalKeyboardKey.backspace) {
-      // Handle backspace by removing the last character from the buffer
-      if (_bufferedChars.isNotEmpty) {
-        _bufferedChars.removeLast();
-      }
       return "backspace";
     } else if (logicalKey == LogicalKeyboardKey.enter) {
-      // Prevent enter key from interfering with barcode
-      // It should not trigger a barcode scan, but can trigger another action if needed
-      return "enter"; // Or an empty string if you don't want to process enter at all
+      return "enter"; // Don't include enter key in the barcode string
     } else if (logicalKey == LogicalKeyboardKey.space) {
       return "space";
     } else if (logicalKey == LogicalKeyboardKey.period) {
