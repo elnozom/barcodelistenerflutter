@@ -43,9 +43,6 @@ class _BarcodeInputListenerState extends State<BarcodeInputListener> {
   late StreamSubscription<LogicalKeyboardKey?> _logicalKeyStreamSubscription;
   final StreamController<String?> _keyStreamController =
       StreamController<String?>();
-  final StreamController<LogicalKeyboardKey?> _logicalKeyStreamController =
-      StreamController<LogicalKeyboardKey?>();
-
   @override
   void initState() {
     super.initState();
@@ -56,10 +53,6 @@ class _BarcodeInputListenerState extends State<BarcodeInputListener> {
     _keyStreamSubscription = _keyStreamController.stream
         .where((char) => char != null)
         .listen(_handleKeyEvent);
-    // Listen for logical key stream
-    _logicalKeyStreamSubscription = _logicalKeyStreamController.stream
-        .where((key) => key != null)
-        .listen(_handleLogicalKeyEvent);
   }
 
   @override
@@ -70,7 +63,6 @@ class _BarcodeInputListenerState extends State<BarcodeInputListener> {
     _keyStreamSubscription.cancel();
     _logicalKeyStreamSubscription.cancel();
     _keyStreamController.close();
-    _logicalKeyStreamController.close();
     super.dispose();
   }
 
@@ -87,9 +79,28 @@ class _BarcodeInputListenerState extends State<BarcodeInputListener> {
 
   String? _getCharacterFromEvent(KeyEvent event) {
     final String? char = event.character;
+    final logicalKey = event.logicalKey;
     if (char != null && char.isNotEmpty) {
       return char;
     }
+    // Handle alphanumeric characters
+    if (event.character != null && event.character!.isNotEmpty) {
+      return event.character;
+    }
+    if (logicalKey == LogicalKeyboardKey.backspace) {
+      return "backspace";
+    } else if (logicalKey == LogicalKeyboardKey.enter) {
+      return "enter";
+    } else if (logicalKey == LogicalKeyboardKey.space) {
+      return "space";
+    } else if (logicalKey == LogicalKeyboardKey.period) {
+      return ".";
+    } else if (logicalKey.keyId >= LogicalKeyboardKey.f1.keyId &&
+        logicalKey.keyId <= LogicalKeyboardKey.f12.keyId) {
+      // Map F1-F12 keys
+      return "F${logicalKey.keyId - LogicalKeyboardKey.f1.keyId + 1}";
+    }
+
     return null;
   }
 
@@ -134,11 +145,9 @@ class _BarcodeInputListenerState extends State<BarcodeInputListener> {
         onKeyEvent: (KeyEvent event) {
           if (event is KeyDownEvent) {
             String? char = event.character;
-            final logicalKey = event.logicalKey;
             if (char != null) {
               _keyStreamController.add(char);
             }
-            _logicalKeyStreamController.add(logicalKey);
           }
         },
         child: widget.child,
