@@ -88,15 +88,8 @@ class _BarcodeInputListenerState extends State<BarcodeInputListener> {
     _clearOldBufferedChars();
     _lastEventTime = DateTime.now();
     _bufferedChars.add(char!);
-
-    // Once buffer is complete or timeout occurs, send the final barcode
     final barcode = _bufferedChars.join();
-
-    // If there is enough delay (bufferDuration) without new input, trigger the barcode scan
-    if (DateTime.now().difference(_lastEventTime!) > widget.bufferDuration) {
-      widget.onBarcodeScanned(barcode);
-      _bufferedChars.clear(); // Clear the buffer after sending the barcode
-    }
+    widget.onBarcodeScanned(barcode);
   }
 
   // Handling logical key events like Backspace, Enter, etc.
