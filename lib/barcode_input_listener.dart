@@ -76,12 +76,7 @@ class _BarcodeInputListenerState extends State<BarcodeInputListener> {
   }
 
   String? _getCharacterFromEvent(KeyEvent event) {
-    final String? char = event.character;
     final logicalKey = event.logicalKey;
-    if (char != null && char.isNotEmpty) {
-      return char;
-    }
-    // Handle alphanumeric characters
     if (event.character != null && event.character!.isNotEmpty) {
       return event.character;
     }
