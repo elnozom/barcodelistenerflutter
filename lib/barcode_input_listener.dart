@@ -101,11 +101,11 @@ class _BarcodeInputListenerState extends State<BarcodeInputListener> {
 
   String _getBarcodeForLogicalKey(LogicalKeyboardKey logicalKey) {
     if (logicalKey == LogicalKeyboardKey.backspace) {
-      return "bs";
+      return "backspace";
     } else if (logicalKey == LogicalKeyboardKey.enter) {
-      return "en";
+      return "enter";
     } else if (logicalKey == LogicalKeyboardKey.space) {
-      return "s";
+      return "space";
     } else if (logicalKey == LogicalKeyboardKey.period) {
       return ".";
     } else if (logicalKey.keyId >= LogicalKeyboardKey.f1.keyId &&
