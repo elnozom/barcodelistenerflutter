@@ -106,8 +106,6 @@ class _BarcodeInputListenerState extends State<BarcodeInputListener> {
       return "enter";
     } else if (logicalKey == LogicalKeyboardKey.space) {
       return "space";
-    } else if (logicalKey == LogicalKeyboardKey.period) {
-      return ".";
     } else if (logicalKey.keyId >= LogicalKeyboardKey.f1.keyId &&
         logicalKey.keyId <= LogicalKeyboardKey.f12.keyId) {
       return "F${logicalKey.keyId - LogicalKeyboardKey.f1.keyId + 1}";
