@@ -68,17 +68,44 @@ class _BarcodeInputListenerState extends State<BarcodeInputListener> {
   void _onKeyEvent(RawKeyEvent event) {
     if ((!widget.useKeyDownEvent && event is RawKeyUpEvent) ||
         (widget.useKeyDownEvent && event is RawKeyDownEvent)) {
-      // Extract the character if it exists
-      String? char = event.logicalKey.keyLabel;
-      if (char != null && char.isNotEmpty) {
-        _keyStreamController.add(char);
-      }
-      // Extract the logical key
+      // Handle NumPad keys and standard keys
       LogicalKeyboardKey logicalKey = event.logicalKey;
+
+      // Add logical key events to the stream
       if (logicalKey != LogicalKeyboardKey.unidentified) {
         _logicalKeyStreamController.add(logicalKey);
       }
+      String? char = logicalKey.keyLabel;
+      if (kIsWeb ||
+          Platform.isWindows ||
+          Platform.isLinux ||
+          Platform.isMacOS) {
+        if (char == null || char.isEmpty) {
+          // Handle NumPad keys explicitly
+          char = _getNumPadKeyLabel(logicalKey);
+        }
+      }
+      // Extract character for standard keys
+      if (char != null && char.isNotEmpty) {
+        _keyStreamController.add(char);
+      }
     }
+  }
+
+  String _getNumPadKeyLabel(LogicalKeyboardKey logicalKey) {
+    if (logicalKey == LogicalKeyboardKey.numpad0) return '0';
+    if (logicalKey == LogicalKeyboardKey.numpad1) return '1';
+    if (logicalKey == LogicalKeyboardKey.numpad2) return '2';
+    if (logicalKey == LogicalKeyboardKey.numpad3) return '3';
+    if (logicalKey == LogicalKeyboardKey.numpad4) return '4';
+    if (logicalKey == LogicalKeyboardKey.numpad5) return '5';
+    if (logicalKey == LogicalKeyboardKey.numpad6) return '6';
+    if (logicalKey == LogicalKeyboardKey.numpad7) return '7';
+    if (logicalKey == LogicalKeyboardKey.numpad8) return '8';
+    if (logicalKey == LogicalKeyboardKey.numpad9) return '9';
+    if (logicalKey == LogicalKeyboardKey.numpadDecimal) return '.';
+    if (logicalKey == LogicalKeyboardKey.numpadEnter) return 'enter';
+    return '';
   }
 
   void _handleKeyEvent(String? char) {
