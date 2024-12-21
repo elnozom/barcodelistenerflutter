@@ -138,9 +138,12 @@ class _BarcodeInputListenerState extends State<BarcodeInputListener> {
     } else if (logicalKey == LogicalKeyboardKey.controlLeft ||
         logicalKey == LogicalKeyboardKey.controlRight) {
       return "ctrl";
+    } else if (logicalKey.keyId >= LogicalKeyboardKey.f1.keyId &&
+        logicalKey.keyId <= LogicalKeyboardKey.f12.keyId) {
+      return "F${logicalKey.keyId - LogicalKeyboardKey.f1.keyId + 1}";
     }
     // Return key label for alphanumeric keys
-    return logicalKey.keyLabel.isNotEmpty ? logicalKey.keyLabel : '';
+    return '';
   }
 
   void _clearOldBufferedChars() {
