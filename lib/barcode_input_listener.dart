@@ -1,8 +1,8 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'dart:io' show Platform;
 
 typedef BarcodeScannedVoidCallBack = void Function(String barcode);
 
@@ -68,19 +68,19 @@ class _BarcodeInputListenerState extends State<BarcodeInputListener> {
   void _onKeyEvent(RawKeyEvent event) {
     if ((!widget.useKeyDownEvent && event is RawKeyUpEvent) ||
         (widget.useKeyDownEvent && event is RawKeyDownEvent)) {
+      // Extract the character if it exists
+      String? char = event.logicalKey.keyLabel;
+      if (char != null && char.isNotEmpty) {
+        _keyStreamController.add(char);
+      }
       // Extract the logical key
       LogicalKeyboardKey logicalKey = event.logicalKey;
-
       if (logicalKey != LogicalKeyboardKey.unidentified) {
-        String barcode = _getBarcodeForLogicalKey(logicalKey);
-        if (barcode.isNotEmpty) {
-          _keyStreamController.add(barcode);
-        }
+        _logicalKeyStreamController.add(logicalKey);
       }
     }
   }
 
-  // Handling key event and sending barcode string
   void _handleKeyEvent(String? char) {
     _clearOldBufferedChars();
     _lastEventTime = DateTime.now();
@@ -100,7 +100,6 @@ class _BarcodeInputListenerState extends State<BarcodeInputListener> {
   }
 
   String _getBarcodeForLogicalKey(LogicalKeyboardKey logicalKey) {
-    // Map each logical key to a barcode string
     if (logicalKey == LogicalKeyboardKey.backspace) {
       return "backspace";
     } else if (logicalKey == LogicalKeyboardKey.enter) {
@@ -142,8 +141,7 @@ class _BarcodeInputListenerState extends State<BarcodeInputListener> {
         logicalKey.keyId <= LogicalKeyboardKey.f12.keyId) {
       return "F${logicalKey.keyId - LogicalKeyboardKey.f1.keyId + 1}";
     }
-    // Return key label for alphanumeric keys
-    return '';
+    return "";
   }
 
   void _clearOldBufferedChars() {
@@ -156,12 +154,29 @@ class _BarcodeInputListenerState extends State<BarcodeInputListener> {
 
   @override
   Widget build(BuildContext context) {
-    return RawKeyboardListener(
-      focusNode: FocusNode(), // Ensure focus node
-      onKey: (RawKeyEvent event) {
-        _onKeyEvent(event); // Handle the key event
-      },
-      child: widget.child,
-    );
+    if (kIsWeb || Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+      return RawKeyboardListener(
+        focusNode: FocusNode(),
+        onKey: (RawKeyEvent event) {
+          _onKeyEvent(event);
+        },
+        child: widget.child,
+      );
+    } else {
+      final focusNode = FocusNode();
+      focusNode.requestFocus();
+      return GestureDetector(
+        onTap: () => focusNode.requestFocus(),
+        child: Focus(
+          autofocus: true,
+          focusNode: focusNode,
+          onKey: (FocusNode node, RawKeyEvent event) {
+            _onKeyEvent(event);
+            return KeyEventResult.handled;
+          },
+          child: widget.child,
+        ),
+      );
+    }
   }
 }
