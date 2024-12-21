@@ -106,8 +106,6 @@ class _BarcodeInputListenerState extends State<BarcodeInputListener> {
       return "enter";
     } else if (logicalKey == LogicalKeyboardKey.space) {
       return "space";
-    } else if (logicalKey == LogicalKeyboardKey.tab) {
-      return "tab";
     } else if (logicalKey == LogicalKeyboardKey.numpad0) {
       return "0";
     } else if (logicalKey == LogicalKeyboardKey.numpad1) {
@@ -128,18 +126,6 @@ class _BarcodeInputListenerState extends State<BarcodeInputListener> {
       return "8";
     } else if (logicalKey == LogicalKeyboardKey.numpad9) {
       return "9";
-    } else if (logicalKey == LogicalKeyboardKey.shiftLeft ||
-        logicalKey == LogicalKeyboardKey.shiftRight) {
-      return "shift";
-    } else if (logicalKey == LogicalKeyboardKey.altLeft ||
-        logicalKey == LogicalKeyboardKey.altRight) {
-      return "alt";
-    } else if (logicalKey == LogicalKeyboardKey.controlLeft ||
-        logicalKey == LogicalKeyboardKey.controlRight) {
-      return "ctrl";
-    } else if (logicalKey.keyId >= LogicalKeyboardKey.f1.keyId &&
-        logicalKey.keyId <= LogicalKeyboardKey.f12.keyId) {
-      return "F${logicalKey.keyId - LogicalKeyboardKey.f1.keyId + 1}";
     }
     return "";
   }
