@@ -66,41 +66,39 @@ class _BarcodeInputListenerState extends State<BarcodeInputListener> {
 
   // This function captures both physical keys and logical keys
   void _onKeyEvent(RawKeyEvent event) {
+    print(
+        'RawKeyEvent: ${event.logicalKey}, Key Label: ${event.logicalKey.keyLabel}');
     if ((!widget.useKeyDownEvent && event is RawKeyUpEvent) ||
         (widget.useKeyDownEvent && event is RawKeyDownEvent)) {
-      // Handle NumPad keys and standard keys
-      LogicalKeyboardKey logicalKey = event.logicalKey;
-
-      // Add logical key events to the stream
-      if (logicalKey != LogicalKeyboardKey.unidentified) {
-        _logicalKeyStreamController.add(logicalKey);
-      }
-      String? char = logicalKey.keyLabel;
-      if (char == null || char.isEmpty) {
-        // Handle NumPad keys explicitly
-        char = _getNumPadKeyLabel(logicalKey);
-      }
-      // Extract character for standard keys
+      // Extract the character if it exists
+      String? char = event.logicalKey.keyLabel;
       if (char != null && char.isNotEmpty) {
         _keyStreamController.add(char);
       }
-    }
-  }
 
-  String _getNumPadKeyLabel(LogicalKeyboardKey logicalKey) {
-    if (logicalKey == LogicalKeyboardKey.numpad0) return '0';
-    if (logicalKey == LogicalKeyboardKey.numpad1) return '1';
-    if (logicalKey == LogicalKeyboardKey.numpad2) return '2';
-    if (logicalKey == LogicalKeyboardKey.numpad3) return '3';
-    if (logicalKey == LogicalKeyboardKey.numpad4) return '4';
-    if (logicalKey == LogicalKeyboardKey.numpad5) return '5';
-    if (logicalKey == LogicalKeyboardKey.numpad6) return '6';
-    if (logicalKey == LogicalKeyboardKey.numpad7) return '7';
-    if (logicalKey == LogicalKeyboardKey.numpad8) return '8';
-    if (logicalKey == LogicalKeyboardKey.numpad9) return '9';
-    if (logicalKey == LogicalKeyboardKey.numpadDecimal) return '.';
-    if (logicalKey == LogicalKeyboardKey.numpadEnter) return 'enter';
-    return '';
+      // Explicit handling of NumPad keys
+      if (event.logicalKey == LogicalKeyboardKey.numpad1) {
+        _keyStreamController.add('1');
+      } else if (event.logicalKey == LogicalKeyboardKey.numpad2) {
+        _keyStreamController.add('2');
+      } else if (event.logicalKey == LogicalKeyboardKey.numpad3) {
+        _keyStreamController.add('3');
+      } else if (event.logicalKey == LogicalKeyboardKey.numpad4) {
+        _keyStreamController.add('4');
+      } else if (event.logicalKey == LogicalKeyboardKey.numpad5) {
+        _keyStreamController.add('5');
+      } else if (event.logicalKey == LogicalKeyboardKey.numpad6) {
+        _keyStreamController.add('6');
+      } else if (event.logicalKey == LogicalKeyboardKey.numpad7) {
+        _keyStreamController.add('7');
+      } else if (event.logicalKey == LogicalKeyboardKey.numpad8) {
+        _keyStreamController.add('8');
+      } else if (event.logicalKey == LogicalKeyboardKey.numpad9) {
+        _keyStreamController.add('9');
+      } else if (event.logicalKey == LogicalKeyboardKey.numpad0) {
+        _keyStreamController.add('0');
+      }
+    }
   }
 
   void _handleKeyEvent(String? char) {
@@ -145,29 +143,12 @@ class _BarcodeInputListenerState extends State<BarcodeInputListener> {
 
   @override
   Widget build(BuildContext context) {
-    if (kIsWeb || Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
-      return RawKeyboardListener(
-        focusNode: FocusNode(),
-        onKey: (RawKeyEvent event) {
-          _onKeyEvent(event);
-        },
-        child: widget.child,
-      );
-    } else {
-      final focusNode = FocusNode();
-      focusNode.requestFocus();
-      return GestureDetector(
-        onTap: () => focusNode.requestFocus(),
-        child: Focus(
-          autofocus: true,
-          focusNode: focusNode,
-          onKey: (FocusNode node, RawKeyEvent event) {
-            _onKeyEvent(event);
-            return KeyEventResult.handled;
-          },
-          child: widget.child,
-        ),
-      );
-    }
+    return RawKeyboardListener(
+      focusNode: FocusNode(), // Ensure focus node
+      onKey: (RawKeyEvent event) {
+        _onKeyEvent(event); // Handle the key event
+      },
+      child: widget.child,
+    );
   }
 }
