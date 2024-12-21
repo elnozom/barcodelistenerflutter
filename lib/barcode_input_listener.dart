@@ -76,14 +76,9 @@ class _BarcodeInputListenerState extends State<BarcodeInputListener> {
         _logicalKeyStreamController.add(logicalKey);
       }
       String? char = logicalKey.keyLabel;
-      if (kIsWeb ||
-          Platform.isWindows ||
-          Platform.isLinux ||
-          Platform.isMacOS) {
-        if (char == null || char.isEmpty) {
-          // Handle NumPad keys explicitly
-          char = _getNumPadKeyLabel(logicalKey);
-        }
+      if (char == null || char.isEmpty) {
+        // Handle NumPad keys explicitly
+        char = _getNumPadKeyLabel(logicalKey);
       }
       // Extract character for standard keys
       if (char != null && char.isNotEmpty) {
